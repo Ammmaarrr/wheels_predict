@@ -124,8 +124,8 @@ class EnhancedRecommendationEngine:
         # Scale features
         self.feature_matrix = self.scaler.fit_transform(self.feature_matrix)
         
-        # Calculate similarity matrix
-        self.similarity_matrix = cosine_similarity(self.feature_matrix)
+        # Calculate similarity matrix lazily
+        self.similarity_matrix = None
         
         print("Feature matrix created successfully!")
         
@@ -295,6 +295,10 @@ class EnhancedRecommendationEngine:
     
     def get_similar_cars(self, car_index: int, max_results: int = 5) -> List[Dict[str, Any]]:
         """Get similar cars based on features."""
+        if self.similarity_matrix is None and self.feature_matrix is not None:
+            print("Computing similarity matrix lazily...")
+            self.similarity_matrix = cosine_similarity(self.feature_matrix)
+            
         if self.similarity_matrix is None:
             raise ValueError("Similarity matrix not computed. Please load data first.")
         

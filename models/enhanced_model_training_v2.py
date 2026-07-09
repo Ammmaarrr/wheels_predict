@@ -258,8 +258,13 @@ def main():
     # Initialize predictor
     predictor = EnhancedCarPricePredictor()
     
-    # Load enhanced dataset
-    data_path = "data/cleaned/cleaned_enhanced_2025-07-11_03-58-18.csv"
+    # Find latest enhanced dataset
+    import glob
+    files = sorted(glob.glob("data/cleaned/cleaned_enhanced_*.csv"))
+    if not files:
+        print("No enhanced dataset found in data/cleaned/")
+        return
+    data_path = files[-1]
     
     try:
         df = predictor.load_enhanced_data(data_path)
