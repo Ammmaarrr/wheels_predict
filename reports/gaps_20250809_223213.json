@@ -1,0 +1,19 @@
+{
+  "source": "targeted_20250809_183737.csv",
+  "rows": 1279,
+  "critical_considered": [
+    "brand",
+    "model",
+    "modelDate",
+    "price",
+    "mileageFromOdometer",
+    "engineDisplacement",
+    "fuelType",
+    "vehicleTransmission",
+    "seller_location"
+  ],
+  "min_year": 2015,
+  "candidates": 736,
+  "emitted_urls": 736,
+  "urls_file": "D:\\data_scrapping_pakwheels\\data\\gaps\\urls_20250809_223213.txt"
+}

@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: pakwheels-db
+    environment:
+      - POSTGRES_DB=pakwheels_db
+      - POSTGRES_USER=pakwheels_user
+      - POSTGRES_PASSWORD=secure_password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pakwheels-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: pakwheels-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pakwheels-network
+
+  # FastAPI Backend (using existing image or simple build)
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: pakwheels-fastapi
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://pakwheels_user:secure_password123@db:5432/pakwheels_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=pakwheels-super-secret-key-2025-production
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    networks:
+      - pakwheels-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  pakwheels-network:
+    driver: bridge

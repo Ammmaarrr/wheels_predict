@@ -1,0 +1,332 @@
+name: Model Monitoring and Retraining
+
+on:
+  schedule:
+    # Run daily at 3 AM UTC for model monitoring
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      force_retrain:
+        description: 'Force retrain all models'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
+
+jobs:
+  model-monitoring:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('config/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r config/requirements.txt
+        # Install additional monitoring dependencies
+        pip install plotly psutil
+
+    - name: Create monitoring directories
+      run: |
+        mkdir -p monitoring
+        mkdir -p logs
+
+    - name: Set up environment variables
+      run: |
+        echo "MODEL_DIR=models" >> $GITHUB_ENV
+        echo "DATA_DIR=data" >> $GITHUB_ENV
+        echo "MONITORING_DIR=monitoring" >> $GITHUB_ENV
+        echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
+
+    - name: Check model performance
+      id: monitoring
+      run: |
+        python -c "
+        import sys
+        import json
+        from models.model_monitor import ModelMonitor, ModelRetrainingPipeline
+        
+        try:
+            # Initialize monitoring pipeline
+            pipeline = ModelRetrainingPipeline()
+            monitor = ModelMonitor()
+            
+            # Run scheduled monitoring check
+            results = pipeline.run_scheduled_check()
+            
+            # Save results to file for later steps
+            with open('monitoring_results.json', 'w') as f:
+                json.dump(results, f, indent=2)
+            
+            # Set outputs for GitHub Actions
+            print(f'::set-output name=check_completed::true')
+            print(f'::set-output name=models_checked::{len(results.get(\"models_checked\", []))}')
+            print(f'::set-output name=models_retrained::{len(results.get(\"models_retrained\", []))}')
+            print(f'::set-output name=has_errors::{len(results.get(\"errors\", [])) > 0}')
+            
+            # Print summary
+            print('Model Monitoring Check Completed')
+            print(f'Models checked: {len(results.get(\"models_checked\", []))}')
+            print(f'Models retrained: {len(results.get(\"models_retrained\", []))}')
+            print(f'Errors: {len(results.get(\"errors\", []))}')
+            
+        except Exception as e:
+            print(f'Error during monitoring: {e}')
+            print(f'::set-output name=check_completed::false')
+            print(f'::set-output name=error::{str(e)}')
+            sys.exit(1)
+        "
+
+    - name: Force retrain models (if requested)
+      if: github.event.inputs.force_retrain == 'true'
+      run: |
+        python -c "
+        from models.model_monitor import ModelRetrainingPipeline
+        
+        pipeline = ModelRetrainingPipeline()
+        models = ['xgb_model_updated', 'rf_model_updated', 'linear_reg_model_updated']
+        
+        for model in models:
+            print(f'Force retraining {model}...')
+            result = pipeline.trigger_retraining(model)
+            if result.get('success'):
+                print(f'Successfully retrained {model}')
+            else:
+                print(f'Failed to retrain {model}: {result.get(\"error\")}')
+        "
+
+    - name: Generate monitoring report
+      run: |
+        python -c "
+        import json
+        import os
+        from datetime import datetime
+        
+        # Load monitoring results
+        if os.path.exists('monitoring_results.json'):
+            with open('monitoring_results.json', 'r') as f:
+                results = json.load(f)
+        else:
+            results = {'error': 'No monitoring results found'}
+        
+        # Generate markdown report
+        report = []
+        report.append('# Model Monitoring Report')
+        report.append(f'**Date**: {datetime.now().strftime(\"%Y-%m-%d %H:%M:%S UTC\")}')
+        report.append('')
+        
+        if 'error' in results:
+            report.append(f'**Error**: {results[\"error\"]}')
+        else:
+            report.append('## Summary')
+            report.append(f'- **Models Checked**: {len(results.get(\"models_checked\", []))}')
+            report.append(f'- **Models Retrained**: {len(results.get(\"models_retrained\", []))}')
+            report.append(f'- **Errors**: {len(results.get(\"errors\", []))}')
+            report.append('')
+            
+            if results.get('models_checked'):
+                report.append('## Models Checked')
+                for check in results['models_checked']:
+                    status = '✅' if not check['should_retrain'] else '⚠️'
+                    report.append(f'- {status} **{check[\"model_name\"]}**: {check[\"reason\"]}')
+                report.append('')
+            
+            if results.get('models_retrained'):
+                report.append('## Models Retrained')
+                for retrain in results['models_retrained']:
+                    status = '✅' if retrain.get('success') else '❌'
+                    report.append(f'- {status} **{retrain[\"model_name\"]}**')
+                    if not retrain.get('success'):
+                        report.append(f'  - Error: {retrain.get(\"error\")}')
+                report.append('')
+            
+            if results.get('errors'):
+                report.append('## Errors')
+                for error in results['errors']:
+                    report.append(f'- ❌ {error}')
+                report.append('')
+        
+        # Save report
+        with open('monitoring_report.md', 'w') as f:
+            f.write('\\n'.join(report))
+        
+        print('Monitoring report generated')
+        "
+
+    - name: Upload monitoring artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: monitoring-results
+        path: |
+          monitoring_results.json
+          monitoring_report.md
+          monitoring/
+          logs/
+        retention-days: 30
+
+    - name: Commit updated models (if any)
+      if: steps.monitoring.outputs.models_retrained > 0
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add any new model files
+        git add models/
+        git add monitoring/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "chore: update models from automated retraining [skip ci]
+          
+          - Models retrained: ${{ steps.monitoring.outputs.models_retrained }}
+          - Monitoring check completed: $(date)
+          "
+          git push
+        fi
+
+    - name: Create issue on monitoring failure
+      if: failure() || steps.monitoring.outputs.has_errors == 'true'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const title = `Model Monitoring Alert - ${new Date().toISOString().split('T')[0]}`;
+          const body = `
+          ## Model Monitoring Alert
+          
+          The automated model monitoring check has detected issues that require attention.
+          
+          **Details:**
+          - Workflow: ${context.workflow}
+          - Run ID: ${context.runId}
+          - Date: ${new Date().toISOString()}
+          
+          **Status:**
+          - Check Completed: ${{ steps.monitoring.outputs.check_completed }}
+          - Models Checked: ${{ steps.monitoring.outputs.models_checked }}
+          - Models Retrained: ${{ steps.monitoring.outputs.models_retrained }}
+          - Has Errors: ${{ steps.monitoring.outputs.has_errors }}
+          
+          Please review the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) and monitoring artifacts for more details.
+          
+          ## Next Steps
+          1. Review the monitoring report artifact
+          2. Check model performance metrics
+          3. Investigate any reported errors
+          4. Consider manual intervention if needed
+          
+          ---
+          *This issue was created automatically by the model monitoring workflow.*
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['monitoring', 'alert', 'automated']
+          });
+
+  notify-results:
+    needs: model-monitoring
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Download monitoring artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: monitoring-results
+        path: ./monitoring-results
+
+    - name: Send Slack notification
+      if: env.SLACK_WEBHOOK_URL
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#ml-monitoring'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+        custom_payload: |
+          {
+            "text": "Model Monitoring Report",
+            "attachments": [{
+              "color": "${{ job.status }}" === "success" ? "good" : "danger",
+              "fields": [{
+                "title": "Repository",
+                "value": "${{ github.repository }}",
+                "short": true
+              }, {
+                "title": "Models Checked",
+                "value": "${{ needs.model-monitoring.outputs.models_checked }}",
+                "short": true
+              }, {
+                "title": "Models Retrained", 
+                "value": "${{ needs.model-monitoring.outputs.models_retrained }}",
+                "short": true
+              }, {
+                "title": "Status",
+                "value": "${{ job.status }}",
+                "short": true
+              }]
+            }]
+          }
+
+    - name: Send Teams notification
+      if: env.TEAMS_WEBHOOK_URL
+      run: |
+        curl -H "Content-Type: application/json" -d '{
+          "@type": "MessageCard",
+          "@context": "https://schema.org/extensions",
+          "summary": "Model Monitoring Report",
+          "themeColor": "${{ job.status == 'success' && '00FF00' || 'FF0000' }}",
+          "sections": [{
+            "activityTitle": "Model Monitoring Completed",
+            "activitySubtitle": "${{ github.repository }}",
+            "facts": [{
+              "name": "Models Checked",
+              "value": "${{ needs.model-monitoring.outputs.models_checked }}"
+            }, {
+              "name": "Models Retrained",
+              "value": "${{ needs.model-monitoring.outputs.models_retrained }}"
+            }, {
+              "name": "Status",
+              "value": "${{ job.status }}"
+            }, {
+              "name": "Workflow",
+              "value": "${{ github.workflow }}"
+            }]
+          }],
+          "potentialAction": [{
+            "@type": "OpenUri",
+            "name": "View Run",
+            "targets": [{
+              "os": "default",
+              "uri": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }]
+          }]
+        }' ${{ secrets.TEAMS_WEBHOOK_URL }}

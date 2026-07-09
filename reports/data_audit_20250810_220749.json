@@ -1,0 +1,143 @@
+{
+  "raw": {
+    "name": "images_smoke_20250810.csv",
+    "rows": 1,
+    "cols": 29,
+    "missing_pct": {
+      "assembly": 1.0,
+      "badges": 1.0,
+      "bodyType": 1.0,
+      "body_type": 1.0,
+      "engine": 1.0,
+      "inspection_score": 1.0,
+      "image": 1.0,
+      "fuel_type": 1.0,
+      "fuelType": 1.0,
+      "mileage": 1.0,
+      "manufacturer": 1.0,
+      "location": 1.0,
+      "itemCondition": 1.0,
+      "transmission": 1.0,
+      "registration_city": 1.0,
+      "engineDisplacement": 0.0,
+      "brand": 0.0,
+      "description": 0.0,
+      "color": 0.0,
+      "mileageFromOdometer": 0.0,
+      "model": 0.0,
+      "name": 0.0,
+      "modelDate": 0.0,
+      "priceCurrency": 0.0,
+      "price": 0.0,
+      "seller_info": 0.0,
+      "seller_location": 0.0,
+      "url": 0.0,
+      "vehicleTransmission": 0.0
+    },
+    "present_fields": [
+      "url",
+      "name",
+      "brand",
+      "model",
+      "modelDate",
+      "price",
+      "mileageFromOdometer",
+      "engineDisplacement",
+      "seller_location"
+    ],
+    "dup_by_url": 0,
+    "dup_by_key": 0,
+    "outliers": {
+      "price_p01": 1700000,
+      "price_p99": 1700000,
+      "price_outliers": 0,
+      "mileage_p01": 120000,
+      "mileage_p99": 120000,
+      "mileage_outliers": 0
+    },
+    "freshness": null
+  },
+  "cleaned": {
+    "name": "pakwheels_listings_deduped_latest.csv",
+    "rows": 43754,
+    "cols": 29,
+    "missing_pct": {
+      "assembly": 1.0,
+      "badges": 1.0,
+      "bodyType": 1.0,
+      "body_type": 1.0,
+      "engine": 1.0,
+      "inspection_score": 1.0,
+      "fuel_type": 1.0,
+      "registration_city": 1.0,
+      "transmission": 1.0,
+      "mileage": 1.0,
+      "manufacturer": 1.0,
+      "location": 1.0,
+      "itemCondition": 1.0,
+      "fuelType": 0.947,
+      "color": 0.1011,
+      "priceCurrency": 0.0116,
+      "engineDisplacement": 0.0104,
+      "price": 0.0097,
+      "image": 0.0045,
+      "vehicleTransmission": 0.0001,
+      "seller_location": 0.0001,
+      "mileageFromOdometer": 0.0001,
+      "modelDate": 0.0,
+      "description": 0.0,
+      "brand": 0.0,
+      "name": 0.0,
+      "model": 0.0,
+      "seller_info": 0.0,
+      "url": 0.0
+    },
+    "present_fields": [
+      "url",
+      "name",
+      "brand",
+      "model",
+      "modelDate",
+      "price",
+      "mileageFromOdometer",
+      "engineDisplacement",
+      "seller_location"
+    ],
+    "dup_by_url": 0,
+    "dup_by_key": 0,
+    "outliers": {},
+    "freshness": null
+  },
+  "coverage": {
+    "brand": {
+      "unique": 1,
+      "top": {
+        "Suzuki": 1
+      }
+    },
+    "model": {
+      "unique": 1,
+      "top": {
+        "Wagon R VXR": 1
+      }
+    },
+    "modelDate": {
+      "unique": 1,
+      "top": {
+        "2018": 1
+      }
+    },
+    "seller_location": {
+      "unique": 1,
+      "top": {
+        "Gujranwala": 1
+      }
+    },
+    "fuelType": {
+      "unique": 1,
+      "top": {
+        "": 1
+      }
+    }
+  }
+}

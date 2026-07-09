@@ -1,0 +1,110 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install code quality tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort mypy pylint bandit
+
+    - name: Run Black formatter check
+      run: |
+        black --check --diff .
+
+    - name: Run isort import sorting check
+      run: |
+        isort --check-only --diff .
+
+    - name: Run flake8 linting
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Run mypy type checking
+      run: |
+        mypy . --ignore-missing-imports --follow-imports=skip
+
+    - name: Run pylint
+      run: |
+        pylint $(find . -name "*.py" | head -20) --exit-zero
+
+    - name: Run Bandit security linting
+      run: |
+        bandit -r . -f json -o bandit-report.json
+        bandit -r . --exit-zero
+
+    - name: Upload reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-quality-reports
+        path: |
+          bandit-report.json
+
+  complexity-analysis:
+    name: Code Complexity Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install complexity tools
+      run: |
+        pip install radon xenon
+
+    - name: Run radon complexity analysis
+      run: |
+        radon cc . --average --show-complexity
+
+    - name: Run xenon complexity check
+      run: |
+        xenon . --max-average A --max-modules A --max-absolute B
+
+  documentation:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install documentation tools
+      run: |
+        pip install pydocstyle sphinx
+
+    - name: Check docstring style
+      run: |
+        pydocstyle . --count --convention=google
+
+    - name: Build documentation
+      run: |
+        sphinx-quickstart -q -p "PakWheels" -a "Team" -v "1.0" docs
+        sphinx-build -W -b html docs docs/_build

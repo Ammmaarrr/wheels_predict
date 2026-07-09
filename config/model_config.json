@@ -1,0 +1,63 @@
+{
+  "models": [
+    "xgb_model_updated",
+    "rf_model_updated",
+    "linear_reg_model_updated"
+  ],
+  "thresholds": {
+    "mae_threshold": 500000,
+    "rmse_threshold": 1000000,
+    "r2_threshold": 0.7,
+    "drift_threshold": 0.05,
+    "performance_degradation": 0.1
+  },
+  "monitoring": {
+    "check_interval_hours": 24,
+    "baseline_update_threshold": 0.05,
+    "minimum_samples_for_drift": 100,
+    "drift_detection_window_days": 30
+  },
+  "retraining": {
+    "auto_retrain": true,
+    "backup_old_models": true,
+    "validation_split": 0.2,
+    "max_retrain_attempts": 3,
+    "retrain_cooldown_hours": 6
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": ["email", "slack"],
+    "alert_on_drift": true,
+    "alert_on_performance_degradation": true,
+    "alert_on_retraining_failure": true
+  },
+  "data": {
+    "feature_columns": [
+      "mileage",
+      "engine_capacity", 
+      "registration_year",
+      "make",
+      "model",
+      "fuel_type",
+      "transmission"
+    ],
+    "target_column": "price",
+    "categorical_features": [
+      "make",
+      "model", 
+      "fuel_type",
+      "transmission"
+    ],
+    "numerical_features": [
+      "mileage",
+      "engine_capacity",
+      "registration_year"
+    ]
+  },
+  "deployment": {
+    "model_registry": "local",
+    "backup_location": "models/backups",
+    "deployment_strategy": "blue_green",
+    "rollback_on_failure": true
+  }
+}

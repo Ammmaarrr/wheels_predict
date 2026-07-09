@@ -1,0 +1,48 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+    environment:
+      - FLASK_APP=web_interface.py
+      - FLASK_ENV=development
+      - PYTHONPATH=/app
+    command: python web/web_interface.py
+    restart: unless-stopped
+
+  scraper:
+    build: .
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+    command: python scrapers/run_scrapy_weekly.py
+    restart: unless-stopped
+    depends_on:
+      - web
+
+  notebook:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./notebooks:/app/notebooks
+    environment:
+      - PYTHONPATH=/app
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+    restart: unless-stopped
+
+volumes:
+  data:
+  logs:
+  models:

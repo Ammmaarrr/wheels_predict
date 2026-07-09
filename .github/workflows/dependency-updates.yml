@@ -1,0 +1,96 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Run weekly on Sundays at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    name: Update Python Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install pip-tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-tools
+
+    - name: Update requirements
+      run: |
+        pip-compile config/requirements.in --upgrade
+        pip-compile tests/requirements_test.in --upgrade
+
+    - name: Test updated dependencies
+      run: |
+        pip install -r config/requirements.txt
+        pip install -r tests/requirements_test.txt
+        python -c "import pandas, sklearn, flask, scrapy; print('All imports successful')"
+
+    - name: Run quick tests
+      run: |
+        pytest tests/ --maxfail=5 -q
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "chore: update Python dependencies"
+        title: "Automated dependency update"
+        body: |
+          This PR updates Python dependencies to their latest versions.
+          
+          **Changes:**
+          - Updated requirements.txt
+          - Updated test requirements
+          
+          **Testing:**
+          - All imports verified
+          - Quick test suite passed
+          
+          Please review and merge if tests pass.
+        branch: dependency-updates
+        delete-branch: true
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety pip-audit
+
+    - name: Run safety check
+      run: |
+        safety check --full-report
+
+    - name: Run pip-audit
+      run: |
+        pip-audit --desc --format=json --output=audit-report.json
+
+    - name: Upload audit report
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-audit-${{ github.run_number }}
+        path: audit-report.json

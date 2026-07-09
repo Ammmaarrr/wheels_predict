@@ -1,0 +1,114 @@
+{
+  "scraping": {
+    "enabled": true,
+    "schedule": "daily",
+    "time": "02:00",
+    "max_pages": 100,
+    "retry_attempts": 3,
+    "delay_between_requests": 2,
+    "user_agents": [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    ],
+    "proxy_rotation": false,
+    "proxy_list": []
+  },
+  "cleaning": {
+    "enabled": true,
+    "auto_clean_after_scrape": true,
+    "backup_raw_data": true,
+    "validation_checks": true,
+    "feature_extraction": {
+      "price_extraction": true,
+      "year_extraction": true,
+      "mileage_extraction": true,
+      "location_normalization": true,
+      "brand_model_extraction": true,
+      "transmission_extraction": true,
+      "fuel_type_extraction": true,
+      "body_type_extraction": true,
+      "engine_capacity_extraction": true,
+      "assembly_type_extraction": true
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "log_level": "INFO",
+    "email_notifications": false,
+    "email_recipients": [
+      "admin@pakwheels-pipeline.com"
+    ],
+    "smtp_config": {
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "username": "",
+      "password": ""
+    },
+    "webhook_url": "",
+    "slack_webhook": "",
+    "discord_webhook": "",
+    "alerts": {
+      "on_failure": true,
+      "on_success": false,
+      "on_low_data_count": true,
+      "min_expected_records": 100
+    }
+  },
+  "storage": {
+    "raw_data_dir": "data/raw",
+    "cleaned_data_dir": "data/cleaned",
+    "logs_dir": "logs",
+    "backup_dir": "backups",
+    "max_raw_files": 10,
+    "max_cleaned_files": 5,
+    "compression": {
+      "enabled": true,
+      "format": "gzip"
+    }
+  },
+  "performance": {
+    "parallel_processing": true,
+    "max_workers": 4,
+    "chunk_size": 1000,
+    "memory_limit_mb": 2048,
+    "timeout_seconds": 3600
+  },
+  "data_quality": {
+    "validation_rules": {
+      "required_columns": [
+        "title",
+        "price",
+        "year",
+        "mileage",
+        "location"
+      ],
+      "price_range": {
+        "min": 50000,
+        "max": 50000000
+      },
+      "year_range": {
+        "min": 1990,
+        "max": 2025
+      },
+      "mileage_range": {
+        "min": 0,
+        "max": 1000000
+      }
+    },
+    "anomaly_detection": {
+      "enabled": true,
+      "price_outlier_threshold": 3.0,
+      "mileage_outlier_threshold": 3.0
+    }
+  },
+  "api_integration": {
+    "enabled": true,
+    "endpoints": {
+      "health_check": "/pipeline/health",
+      "trigger_scraping": "/pipeline/scrape",
+      "trigger_cleaning": "/pipeline/clean",
+      "get_status": "/pipeline/status",
+      "get_logs": "/pipeline/logs"
+    }
+  }
+}

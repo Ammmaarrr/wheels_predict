@@ -1,0 +1,125 @@
+{
+  "raw": {
+    "name": "output_2025-07-05.csv",
+    "rows": 36734,
+    "cols": 29,
+    "missing_pct": {
+      "assembly": 0.9996,
+      "badges": 0.9996,
+      "bodyType": 0.9996,
+      "body_type": 0.9996,
+      "brand": 0.9996,
+      "engine": 0.9996,
+      "inspection_score": 0.9996,
+      "fuel_type": 0.9996,
+      "fuelType": 0.9996,
+      "mileage": 0.9996,
+      "manufacturer": 0.9996,
+      "location": 0.9996,
+      "itemCondition": 0.9996,
+      "vehicleTransmission": 0.9996,
+      "modelDate": 0.9996,
+      "transmission": 0.9996,
+      "registration_city": 0.9996,
+      "model": 0.9996,
+      "color": 0.0871,
+      "priceCurrency": 0.0272,
+      "engineDisplacement": 0.013,
+      "seller_location": 0.0042,
+      "image": 0.0033,
+      "seller_info": 0.0032,
+      "price": 0.0017,
+      "mileageFromOdometer": 0.0009,
+      "description": 0.0,
+      "name": 0.0,
+      "url": 0.0
+    },
+    "present_fields": [
+      "url",
+      "name",
+      "brand",
+      "model",
+      "modelDate",
+      "price",
+      "mileageFromOdometer",
+      "engineDisplacement",
+      "seller_location"
+    ],
+    "dup_by_url": 460,
+    "dup_by_key": 8321,
+    "outliers": {
+      "price_p01": 2019,
+      "price_p99": 37434999,
+      "price_outliers": 640,
+      "mileage_p01": 5,
+      "mileage_p99": 386543,
+      "mileage_outliers": 692
+    },
+    "freshness": null
+  },
+  "cleaned": {
+    "name": "pakwheels_listings_cleaned_20250711_084245.csv",
+    "rows": 50,
+    "cols": 6,
+    "missing_pct": {
+      "title": 0.0,
+      "price": 0.0,
+      "year": 0.0,
+      "mileage": 0.0,
+      "location": 0.0,
+      "scraped_at": 0.0
+    },
+    "present_fields": [
+      "price"
+    ],
+    "dup_by_url": 0,
+    "dup_by_key": 0,
+    "outliers": {},
+    "freshness": null
+  },
+  "coverage": {
+    "brand": {
+      "unique": 2,
+      "top": {
+        "": 36719,
+        "brand": 15
+      }
+    },
+    "model": {
+      "unique": 2,
+      "top": {
+        "": 36719,
+        "model": 15
+      }
+    },
+    "modelDate": {
+      "unique": 2,
+      "top": {
+        "": 36719,
+        "modelDate": 15
+      }
+    },
+    "seller_location": {
+      "unique": 745,
+      "top": {
+        "Lahore": 7918,
+        "Karachi": 7134,
+        "Islamabad": 5749,
+        "Rawalpindi": 2519,
+        "Peshawar": 1346,
+        "Faisalabad": 1240,
+        "Multan": 922,
+        "Gujranwala": 833,
+        "Sialkot": 599,
+        "Sargodha": 357
+      }
+    },
+    "fuelType": {
+      "unique": 2,
+      "top": {
+        "": 36719,
+        "fuelType": 15
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-07-09T19:59:55.467535",
+  "models_checked": [
+    {
+      "model_name": "xgb_model_updated",
+      "should_retrain": false,
+      "reason": "Model performance is acceptable",
+      "forced": false
+    },
+    {
+      "model_name": "rf_model_updated",
+      "should_retrain": false,
+      "reason": "Model performance is acceptable",
+      "forced": false
+    },
+    {
+      "model_name": "linear_reg_model_updated",
+      "should_retrain": false,
+      "reason": "Model performance is acceptable",
+      "forced": false
+    }
+  ],
+  "models_retrained": [],
+  "errors": [],
+  "dry_run": true
+}
