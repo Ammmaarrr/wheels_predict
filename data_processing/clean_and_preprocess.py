@@ -504,9 +504,6 @@ def print_extraction_summary(df):
     
     print("="*60)
 
-RAW_DIR = "data/raw"
-CLEANED_DIR = "data/cleaned"
-
 if __name__ == "__main__":
     print("Starting Enhanced Data Cleaning and Preprocessing...")
     print("="*60)

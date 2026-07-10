@@ -107,5 +107,21 @@ dmypy.json
 *.tar.gz
 *.rar
 
-# Project specific
-# Add your project specific ignores here
+# Production environment file (never commit real credentials)
+.env.production
+.env.production.local
+
+# Runtime data files (change on every run — not source code)
+config/chat_histories.json
+config/user_state.json
+config/users.json
+chat_histories.json
+
+# Monitoring runtime output
+monitoring/*.json
+monitoring/*.jsonl
+
+# Data artifacts produced by the pipeline
+data_processing/output.csv
+data_processing/cleaned_data_for_deployment*.csv
+data_processing/*_summary.txt
