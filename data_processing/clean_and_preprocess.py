@@ -6,6 +6,40 @@ from datetime import datetime
 RAW_DIR = "data/raw"
 CLEANED_DIR = "data/cleaned"
 
+
+def process_price(text):
+    """Parse a price string like 'PKR 2,500,000' into an integer."""
+    if not isinstance(text, str):
+        raise ValueError(f"Invalid price input: {text!r}")
+    cleaned = text.upper().replace("PKR", "").replace(",", "").strip()
+    try:
+        return int(cleaned)
+    except ValueError:
+        raise ValueError(f"Cannot parse price: {text!r}")
+
+
+def process_mileage(text):
+    """Parse a mileage string like '45,000 km' into an integer."""
+    if not isinstance(text, str):
+        raise ValueError(f"Invalid mileage input: {text!r}")
+    cleaned = text.lower().replace("km", "").replace(",", "").strip()
+    try:
+        return int(cleaned)
+    except ValueError:
+        raise ValueError(f"Cannot parse mileage: {text!r}")
+
+
+def process_engine_capacity(text):
+    """Parse an engine capacity string like '1300 cc' into an integer."""
+    if not isinstance(text, str):
+        raise ValueError(f"Invalid engine capacity input: {text!r}")
+    cleaned = text.lower().replace("cc", "").replace(",", "").strip()
+    try:
+        return int(cleaned)
+    except ValueError:
+        raise ValueError(f"Cannot parse engine capacity: {text!r}")
+
+
 # Find the latest raw CSV file
 def get_latest_raw_csv():
     files = [f for f in os.listdir(RAW_DIR) if f.endswith('.csv')]
@@ -14,8 +48,26 @@ def get_latest_raw_csv():
     files.sort(reverse=True)
     return os.path.join(RAW_DIR, files[0])
 
-def clean_data(input_path, output_path):
-    """Clean and preprocess the raw data with enhanced feature extraction."""
+def clean_data(data, output_path=None):
+    """Clean and preprocess raw data.
+
+    Accepts either a file path string or a pandas DataFrame.
+    When given a DataFrame, applies column-level cleaning (price, mileage,
+    engine_capacity string parsing) and returns the cleaned DataFrame.
+    When given a file path, runs the full enhanced feature-extraction pipeline.
+    """
+    if isinstance(data, pd.DataFrame):
+        df = data.copy()
+        if "price" in df.columns and df["price"].dtype == object:
+            df["price"] = df["price"].apply(process_price)
+        if "mileage" in df.columns and df["mileage"].dtype == object:
+            df["mileage"] = df["mileage"].apply(process_mileage)
+        if "engine_capacity" in df.columns and df["engine_capacity"].dtype == object:
+            df["engine_capacity"] = df["engine_capacity"].apply(process_engine_capacity)
+        return df
+
+    # Legacy file-path interface
+    input_path = data
     print(f"Loading data from: {input_path}")
     df = pd.read_csv(input_path)
     print(f"Original data shape: {df.shape}")
@@ -34,11 +86,14 @@ def clean_data(input_path, output_path):
     print_extraction_summary(df)
     
     # Save cleaned data
-    print(f"Saving cleaned data to: {output_path}")
-    df.to_csv(output_path, index=False)
-    
+    if output_path:
+        print(f"Saving cleaned data to: {output_path}")
+        df.to_csv(output_path, index=False)
+
     # Save a summary report
-    summary_path = output_path.replace('.csv', '_summary.txt')
+    summary_path = output_path.replace('.csv', '_summary.txt') if output_path else None
+    if not summary_path:
+        return df
     with open(summary_path, 'w') as f:
         f.write("Enhanced Feature Extraction Summary\n")
         f.write("="*50 + "\n\n")
