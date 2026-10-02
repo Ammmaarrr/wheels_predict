@@ -48,7 +48,7 @@ except Exception as e:
 app = Flask(__name__)
 
 # Enable CORS for all routes
-CORS(app, origins=["http://localhost:3000", "http://localhost:5000"])
+CORS(app)
 
 """
 Frontends supported:
@@ -398,7 +398,11 @@ def api_predict():
         model = data.get('model', 'Unknown')
         year = int(data.get('model_year') or data.get('year') or 2020)
         mileage = int(data.get('mileage', 50000))
-        engine_capacity = float(data.get('engine_capacity', 1.5))
+        engine_capacity = float(data.get('engine_capacity') or 1.5)
+        transmission = (data.get('transmission') or 'automatic').lower()
+        variant = (data.get('variant') or 'standard').lower()
+        color = data.get('color', '')
+        registration = data.get('registration', '')
         
         print(f"Processing: {brand} {model} {year} - {mileage}km - {engine_capacity}L")
         
@@ -411,13 +415,14 @@ def api_predict():
             predictor = ML_STATE['predictor']
             try:
                 if EnhancedCarPricePredictor and isinstance(predictor, EnhancedCarPricePredictor):
-                    # Try with minimal features we have
                     predicted_price = int(float(predictor.predict_price(
                         make=brand, model=model, year=year,
-                        engine_capacity=engine_capacity, transmission='unknown'
+                        engine_capacity=engine_capacity,
+                        transmission=transmission,
+                        variant=variant
                     )))
                     model_used = 'enhanced_model'
-                    confidence = 0.85
+                    confidence = 0.87
                 else:
                     # Generic sklearn-like model; construct simple feature vector if expected
                     # Fallback to rule-based if we cannot infer schema
@@ -465,7 +470,12 @@ def api_predict():
                 'model': model,
                 'model_year': year,
                 'mileage': mileage,
-                'city': data.get('city', 'karachi')
+                'city': data.get('city', 'karachi'),
+                'transmission': transmission,
+                'variant': variant,
+                'engine_capacity': engine_capacity,
+                'color': color,
+                'registration': registration,
             },
             'recommendations': [
                 'Consider servicing history and inspection report to improve valuation.',
@@ -473,7 +483,7 @@ def api_predict():
                 'Market trend is currently stable; watch fuel price changes.'
             ],
             'message': 'Prediction successful',
-            'features_used': ['brand', 'model', 'year', 'mileage', 'engine_capacity'],
+            'features_used': ['brand', 'model', 'year', 'mileage', 'engine_capacity', 'transmission', 'variant'],
             'market_trend': 'stable'
         }
         
@@ -494,6 +504,55 @@ def api_predict():
         })
         error_response.headers.add('Access-Control-Allow-Origin', '*')
         return error_response, 400
+
+@app.route('/api/market-stats')
+def api_market_stats():
+    """Return real market statistics for a given make/model/year from the scraped dataset."""
+    try:
+        import pandas as pd
+        brand = request.args.get('brand', '')
+        model_name = request.args.get('model', '')
+        year = request.args.get('year', '')
+
+        data_path = _find_latest([
+            'data/cleaned/pakwheels_listings_deduped_latest.csv',
+            'data/cleaned/*.csv',
+        ])
+        if not data_path:
+            return jsonify({'error': 'Dataset not found'}), 503
+
+        df = pd.read_csv(data_path, low_memory=False)
+
+        subset = df.copy()
+        if brand:
+            subset = subset[subset['brand'].str.lower() == brand.lower()]
+        if model_name:
+            subset = subset[subset['model'].str.lower().str.contains(model_name.lower(), na=False)]
+        if year:
+            subset = subset[subset['modelDate'].astype(str).str.contains(str(year), na=False)]
+
+        prices = subset['price'].dropna()
+        if len(prices) < 3 and year:
+            # Broaden: drop year filter
+            subset2 = df.copy()
+            if brand:
+                subset2 = subset2[subset2['brand'].str.lower() == brand.lower()]
+            if model_name:
+                subset2 = subset2[subset2['model'].str.lower().str.contains(model_name.lower(), na=False)]
+            prices = subset2['price'].dropna()
+
+        if len(prices) == 0:
+            return jsonify({'error': 'No matching listings'}), 404
+
+        return jsonify({
+            'count': int(len(prices)),
+            'avg': int(prices.mean()),
+            'median': int(prices.median()),
+            'min': int(prices.min()),
+            'max': int(prices.max()),
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/recommendations')
 def api_recommendations():
@@ -688,10 +747,10 @@ def stats():
     return api_stats()
 
 if __name__ == '__main__':
-    print("🚀 Starting PakWheels Full Dashboard...")
-    print("📡 Server: http://localhost:5000")
-    print("🎨 Features: Dashboard, Predictions, Chat, Monitoring")
-    print("✅ React build integrated!")
+    print("[START] Starting PakWheels Full Dashboard...")
+    print("[SERVER] http://localhost:5000")
+    print("[FEATURES] Dashboard, Predictions, Chat, Monitoring")
+    print("[OK] React build integrated!")
     
     app.run(
         host='0.0.0.0',
